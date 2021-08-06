@@ -171,6 +171,12 @@ class fluorophore:
 
             logging.info('{} integral int.|{}nm = {}'.format(self.fluo_name, self.ch_band, self.band_int))
 
+class calcRes:
+    """ Results of integral intensity and crosstalk calculation
+
+    """
+    def __init__(self, fluo_name):
+        pass
 
 FORMAT = "%(asctime)s| %(levelname)s [%(filename)s: - %(funcName)20s]  %(message)s"
 logging.basicConfig(level=logging.INFO,
@@ -185,9 +191,16 @@ with open('settings.yml') as f:
     settings_dict = yaml.safe_load(f)
     logging.info('Settings YAML file uploaded!')
 
+mode = 'ch'
+
 fluo_list = settings_dict['fluo_list']
 ex_list = settings_dict['ex_list']
-ch_dict = settings_dict['ch_reg']
+ch_dict = {}
+try:
+    ch_dict = settings_dict['ch_reg']
+except KeyError:
+    mode = 'view'
+    logging.info('NO band pass selected, view mod!')
 
 
 # read CSV spectra
@@ -206,26 +219,27 @@ for root, dirs, files in os.walk(os.getcwd()):
 
             mol_dict.update({file.split('.')[0]: fluorophore(file.split('.')[0], raw_csv, ex_list, ch_dict)})
 
-
 # channels ratio calc
-mol_1 = mol_dict[fluo_list[0]] 
-mol_2 = mol_dict[fluo_list[1]]
+if len(fluo_list) > 1 and len(ch_dict.keys()) > 0:
+    logging.info('Double fluorophore mode')
+    mol_1 = mol_dict[fluo_list[0]] 
+    mol_2 = mol_dict[fluo_list[1]]
 
-for ch in ch_dict:
-    ch_ratio = round(mol_1.ch_int[ch] / mol_2.ch_int[ch], 3)
-    logging.info('Ch. {} {} em./{} em. ratio = {}'.format(ch_dict[ch], mol_1.fluo_name, mol_2.fluo_name, ch_ratio))
+    for ch in ch_dict:
+        ch_ratio = round(mol_1.ch_int[ch] / mol_2.ch_int[ch], 3)
+        logging.info('Ch. {} {} em./{} em. ratio = {}'.format(ch_dict[ch], mol_1.fluo_name, mol_2.fluo_name, ch_ratio))
 
-    for ex_laser in ex_list:
-        try:
-            A = round(mol_1.ex_dict[ex_laser] / mol_2.ex_dict[ex_laser], 3)
-            # logging.info('  {}nm A factor ({} ex./{} ex.) = {}'.format(ex_laser, mol_1.fluo_name, mol_2.fluo_name, A))
-            int_ratio = round(ch_ratio * A, 3)
+        for ex_laser in ex_list:
+            try:
+                A = round(mol_1.ex_dict[ex_laser] / mol_2.ex_dict[ex_laser], 3)  # excitation ratio for two first fluoropheres
+                # logging.info('  {}nm A factor ({} ex./{} ex.) = {}'.format(ex_laser, mol_1.fluo_name, mol_2.fluo_name, A))
+                int_ratio = round(ch_ratio * A, 3)
 
-            logging.info('  Ch. {} {} em./{} em. ex. {}nm corrected (A={}) ratio = {}'.format(ch_dict[ch], mol_1.fluo_name, mol_2.fluo_name, ex_laser, A, int_ratio))
+                logging.info('  Ch. {} at {}nm corrected ratio = {} (A={})'.format(ch_dict[ch], ex_laser, int_ratio, A))
 
-        except ZeroDivisionError:
-            logging.fatal('  {}nm A factor ({} ex./{} ex.) DOESN`t exist, {} ex. is zero!'.format(ex_laser, mol_1.fluo_name, mol_2.fluo_name, mol_2.fluo_name))
-            continue
+            except ZeroDivisionError:
+                logging.fatal('  {}nm A factor ({} ex./{} ex.) DOESN`t exist, {} ex. is zero!'.format(ex_laser, mol_1.fluo_name, mol_2.fluo_name, mol_2.fluo_name))
+                continue
 
 
 # build plots
@@ -239,13 +253,14 @@ for fluo in mol_dict:
              linestyle='--',
              color=wavelen2rgb(fluo_spectra.em_spec.loc[fluo_spectra.em_spec['em'].idxmax(), 'w'], 1))
 
-for ch in ch_dict:
-    ch_band = ch_dict[ch]
-    plt.fill_between(x=range(ch_band[0], ch_band[1], 1),
-                 y1=0,
-                 y2=110,
-                 alpha=0.35,
-                 label=ch)
+if mode != 'view':
+    for ch in ch_dict:
+        ch_band = ch_dict[ch]
+        plt.fill_between(x=range(ch_band[0], ch_band[1], 1),
+                     y1=0,
+                     y2=110,
+                     alpha=0.35,
+                     label=ch)
 
 for laser in ex_list:
     plt.plot([laser, laser], [0, 110],
@@ -255,7 +270,9 @@ for laser in ex_list:
 
 plt.xlabel('Wavelength, nm')
 plt.ylabel('Intensity, %')
-plt.xlim(300,650)
+plt.xlim(300,800)  # 300, 800
+plt.xticks(range(300,850,25))
+plt.yticks(range(0,110,10))
 plt.legend()
 plt.tight_layout()
 plt.show()
