@@ -139,7 +139,6 @@ def wavelen2rgb(Wavelength, MaxIntensity=100):
 
     return [R, G, B]
 
-
 class fluorophore:
     """ Fluorophore class, creating for each spectra
     
@@ -218,6 +217,7 @@ for root, dirs, files in os.walk(os.getcwd()):
               raw_csv['em'] = raw_csv['em'] *100
 
             mol_dict.update({file.split('.')[0]: fluorophore(file.split('.')[0], raw_csv, ex_list, ch_dict)})
+
 
 # channels ratio calc
 if len(fluo_list) > 1 and len(ch_dict.keys()) > 0:
