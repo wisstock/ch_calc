@@ -1,14 +1,3 @@
-# fluo_list: ['mTFP1', 'fluo_4']
-# ex_list: [458, 515]
-# ch_reg: {'ch_1':[465, 500],
-#          'ch_2':[550, 650]}
-
-fluo_list: ['alexa_488', 'alexa_555'] 
-ex_list: [405, 488, 543, 633]
-ch_reg: {'ch_1':[560, 600]}
-
-# fluo_list: ['EYFP']
-# ex_list: []
-# ch_reg: {'ch_1':[400, 430],
-#          'ch_2':[510, 550],
-#          'ch_3':[600, 700]}
+fluo_list: ['fluo_4', 'TagRFP'] 
+ex_list: [488, 543]
+ch_reg: {'ch_1':[497, 535], 'ch_2':[670, 770]}

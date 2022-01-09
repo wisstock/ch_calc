@@ -157,7 +157,7 @@ class fluorophore:
                 self.ex_lvl = int(self.ex_spec.loc[self.ex_spec['w'] == laser, 'ex'])
             except ValueError:
                 logging.fatal('{} DOESN`T excite at {} nm!'.format(self.fluo_name, laser))
-                continue
+                self.ex_lvl = 0
             self.ex_dict.update({laser: self.ex_lvl})
             logging.info('{}|{} nm = {}'.format(self.fluo_name, laser, self.ex_lvl))
 
@@ -226,8 +226,13 @@ if len(fluo_list) > 1 and len(ch_dict.keys()) > 0:
     mol_2 = mol_dict[fluo_list[1]]
 
     for ch in ch_dict:
-        ch_ratio = round(mol_1.ch_int[ch] / mol_2.ch_int[ch], 3)
-        logging.info('Ch. {} {} em./{} em. ratio = {}'.format(ch_dict[ch], mol_1.fluo_name, mol_2.fluo_name, ch_ratio))
+        try:
+            ch_ratio = round(mol_1.ch_int[ch] / mol_2.ch_int[ch], 3)
+            logging.info('Ch. {} {} em./{} em. ratio = {}'.format(ch_dict[ch], mol_1.fluo_name, mol_2.fluo_name, ch_ratio))
+
+        except ZeroDivisionError:
+            ch_ratio = 0
+            logging.info(f'{mol_2.fluo_name} intensity in {ch} is zero!')
 
         for ex_laser in ex_list:
             try:
@@ -260,7 +265,7 @@ if mode != 'view':
                      y1=0,
                      y2=110,
                      alpha=0.35,
-                     label=ch)
+                     label=f'{ch}, {ch_band[0]}-{ch_band[1]}nm')
 
 for laser in ex_list:
     plt.plot([laser, laser], [0, 110],
